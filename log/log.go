@@ -19,6 +19,7 @@ package log
 import (
 	"errors"
 	"fmt"
+	"io"
 	"log/syslog"
 	"os"
 	"runtime/debug"
@@ -89,6 +90,8 @@ var printStackTrace bool = false
 var syslogLevel LogLevel = ERROR
 var syslogWriter *syslog.Writer
 
+var defaultOutput io.Writer = os.Stderr
+
 // SetPrintStackTrace enables/disables dumping the stack upon error logging
 func SetPrintStackTrace(shouldPrintStackTrace bool) {
 	printStackTrace = shouldPrintStackTrace
@@ -103,6 +106,11 @@ func SetLevel(logLevel LogLevel) {
 // GetLevel returns current global log level
 func GetLevel() LogLevel {
 	return globalLogLevel
+}
+
+// SetOutput sets the logger output.
+func SetOutput(output io.Writer) {
+	defaultOutput = output
 }
 
 // EnableSyslogWriter enables, if possible, writes to syslog. These will execute _in addition_ to normal logging
@@ -128,7 +136,7 @@ func logFormattedEntry(logLevel LogLevel, message string, args ...interface{}) s
 	}
 	msgArgs := fmt.Sprintf(message, args...)
 	entryString := fmt.Sprintf("%s %s %s", time.Now().Format(TimeFormat), logLevel, msgArgs)
-	fmt.Fprintln(os.Stderr, entryString)
+	fmt.Fprintln(defaultOutput, entryString)
 
 	if syslogWriter != nil {
 		go func() error {
